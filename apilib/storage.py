@@ -123,6 +123,70 @@ class KeyStorage:
         except:
             return []
     
+    def delete_key(self, provider: str, key_index: int) -> bool:
+        """Delete a specific API key by index.
+        
+        Args:
+            provider (str): The API provider name
+            key_index (int): The index of the key to delete (1-based)
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            data = self._load_data()
+            
+            if provider not in data or not data[provider]:
+                return False
+            
+            # Convert to 0-based index
+            index = key_index - 1
+            
+            if index < 0 or index >= len(data[provider]):
+                return False
+            
+            # Remove the key at the specified index
+            data[provider].pop(index)
+            
+            # Remove provider if no keys left
+            if not data[provider]:
+                del data[provider]
+            
+            self._save_data(data)
+            return True
+            
+        except Exception as e:
+            print(f"Error deleting key: {e}")
+            return False
+    
+    def get_all_keys(self) -> Dict[str, List[str]]:
+        """Retrieve all API keys for all providers.
+        
+        Returns:
+            Dict[str, List[str]]: Dictionary with provider names as keys and lists of decrypted API keys as values
+        """
+        try:
+            data = self._load_data()
+            all_keys = {}
+            
+            for provider, encrypted_keys in data.items():
+                decrypted_keys = []
+                for encrypted_key in encrypted_keys:
+                    try:
+                        decrypted_key = self.encryption.decrypt(encrypted_key)
+                        decrypted_keys.append(decrypted_key)
+                    except:
+                        continue  # Skip corrupted entries
+                
+                if decrypted_keys:  # Only include providers with valid keys
+                    all_keys[provider] = decrypted_keys
+            
+            return all_keys
+            
+        except Exception as e:
+            print(f"Error retrieving all keys: {e}")
+            return {}
+    
     def delete_provider_keys(self, provider: str) -> bool:
         """Delete all keys for a provider.
         

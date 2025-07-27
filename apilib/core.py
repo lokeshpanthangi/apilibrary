@@ -1,6 +1,6 @@
 """Core API Key Manager"""
 
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from .storage import KeyStorage
 
 class APIKeyManager:
@@ -56,6 +56,53 @@ class APIKeyManager:
             return False, [], message
         
         return True, keys, f"Found {len(keys)} key(s) for {provider.title()}"
+    
+    def delete_key(self, provider: str, key_index: int) -> Tuple[bool, str]:
+        """Delete a specific API key by index.
+        
+        Args:
+            provider (str): The provider name
+            key_index (int): The index of the key to delete (1-based)
+            
+        Returns:
+            Tuple[bool, str]: (Success status, Message)
+        """
+        # Normalize provider name
+        provider = provider.lower().strip()
+        
+        # Validate key index
+        if key_index < 1:
+            return False, "Key index must be 1 or greater"
+        
+        # Check if provider exists and has keys
+        keys = self.storage.get_keys(provider)
+        if not keys:
+            return False, f"No keys found for '{provider}'"
+        
+        if key_index > len(keys):
+            return False, f"Key index {key_index} not found. {provider.title()} has only {len(keys)} key(s)"
+        
+        # Delete the key
+        success = self.storage.delete_key(provider, key_index)
+        
+        if success:
+            return True, f"Key #{key_index} successfully deleted for {provider.title()}"
+        else:
+            return False, "Failed to delete key"
+    
+    def fetch_all_keys(self) -> Tuple[bool, Dict[str, List[str]], str]:
+        """Fetch all API keys for all providers.
+        
+        Returns:
+            Tuple[bool, Dict[str, List[str]], str]: (Success status, All keys dict, Message)
+        """
+        all_keys = self.storage.get_all_keys()
+        
+        if not all_keys:
+            return False, {}, "No API keys stored yet. Use 'storekey' to add some keys first."
+        
+        total_keys = sum(len(keys) for keys in all_keys.values())
+        return True, all_keys, f"Found {total_keys} key(s) across {len(all_keys)} provider(s)"
     
     def list_all_providers(self) -> List[str]:
         """Get list of all providers with stored keys.

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: apilibrary
-Version: 1.1.0
+Version: 1.2.0
 Summary: A simple library to securely store and retrieve API keys
 Author-email: Lokesh <lokeshpantangi@gmail.com>
 Project-URL: Homepage, https://github.com/lokeshpantangi/apilibrary
