@@ -35,6 +35,7 @@ fetchkey = "apilib.commands:fetch_key_command"
 deletekey = "apilib.commands:delete_key_command"
 fetchallkeys = "apilib.commands:fetch_all_keys_command"
 deleteallkeys = "apilib.commands:delete_all_keys_command"
+addgitignore = "apilib.commands:addgitignore_command"
 hiiapi = "apilib.commands:hiiapi_command"
 checkauth = "apilib.password_commands:check_auth_status_command"
 

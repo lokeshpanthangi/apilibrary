@@ -70,8 +70,6 @@ def store_key_command():
         if stored_count == 0 and not errors:
             click.echo("❌ No valid API keys found in .env file")
             click.echo("Expected format: variable_name = your_key")
-            click.echo("Example: OPENAI_API_KEY = sk-1234567890abcdef")
-            click.echo("Example: nomic_key = djahsjkdadsb")
     else:
         # Normal storekey behavior
         if len(sys.argv) < 3:
@@ -305,6 +303,210 @@ def delete_all_keys_command():
         click.echo(f"\n❌ {message}")
         sys.exit(1)
 
+def addgitignore_command():
+    """Entry point for addgitignore command."""
+    from pathlib import Path
+    
+    # Define common .gitignore patterns
+    patterns = [
+        "# Python",
+        "__pycache__/",
+        "*.py[cod]",
+        "*$py.class",
+        "*.so",
+        ".Python",
+        "build/",
+        "develop-eggs/",
+        "dist/",
+        "downloads/",
+        "eggs/",
+        ".eggs/",
+        "lib/",
+        "lib64/",
+        "parts/",
+        "sdist/",
+        "var/",
+        "wheels/",
+        "*.egg-info/",
+        ".installed.cfg",
+        "*.egg",
+        "MANIFEST",
+        "",
+        "# PyInstaller",
+        "*.manifest",
+        "*.spec",
+        "",
+        "# Installer logs",
+        "pip-log.txt",
+        "pip-delete-this-directory.txt",
+        "",
+        "# Unit test / coverage reports",
+        "htmlcov/",
+        ".tox/",
+        ".nox/",
+        ".coverage",
+        ".coverage.*",
+        ".cache",
+        "nosetests.xml",
+        "coverage.xml",
+        "*.cover",
+        ".hypothesis/",
+        ".pytest_cache/",
+        "",
+        "# Translations",
+        "*.mo",
+        "*.pot",
+        "",
+        "# Django stuff:",
+        "*.log",
+        "local_settings.py",
+        "db.sqlite3",
+        "",
+        "# Flask stuff:",
+        "instance/",
+        ".webassets-cache",
+        "",
+        "# Scrapy stuff:",
+        ".scrapy",
+        "",
+        "# Sphinx documentation",
+        "docs/_build/",
+        "",
+        "# PyBuilder",
+        "target/",
+        "",
+        "# Jupyter Notebook",
+        ".ipynb_checkpoints",
+        "",
+        "# pyenv",
+        ".python-version",
+        "",
+        "# celery beat schedule file",
+        "celerybeat-schedule",
+        "",
+        "# SageMath parsed files",
+        "*.sage.py",
+        "",
+        "# Environments",
+        ".env",
+        ".venv",
+        "env/",
+        "venv/",
+        "ENV/",
+        "env.bak/",
+        "venv.bak/",
+        "",
+        "# Spyder project settings",
+        ".spyderproject",
+        ".spyproject",
+        "",
+        "# Rope project settings",
+        ".ropeproject",
+        "",
+        "# mkdocs documentation",
+        "/site",
+        "",
+        "# mypy",
+        ".mypy_cache/",
+        ".dmypy.json",
+        "dmypy.json",
+        "",
+        "# Pyre type checker",
+        ".pyre/",
+        "",
+        "# IDEs",
+        ".vscode/",
+        ".idea/",
+        "*.swp",
+        "*.swo",
+        "*~",
+        "",
+        "# OS generated files",
+        ".DS_Store",
+        ".DS_Store?",
+        ".Spotlight-V100",
+        ".Trashes",
+        "ehthumbs.db",
+        "Thumbs.db"
+    ]
+    
+    gitignore_path = Path.cwd() / ".gitignore"
+    
+    try:
+        existing_patterns = set()
+        existing_content = ""
+        
+        # Check if .gitignore already exists and read existing patterns
+        if gitignore_path.exists():
+            with open(gitignore_path, 'r', encoding='utf-8') as f:
+                existing_content = f.read()
+                # Extract patterns to avoid duplicates (ignore comments and empty lines)
+                existing_lines = existing_content.splitlines()
+                existing_patterns = {line.strip() for line in existing_lines 
+                                   if line.strip() and not line.strip().startswith('#')}
+            click.echo("📁 Found existing .gitignore file")
+        else:
+            click.echo("📁 Creating new .gitignore file")
+        
+        # Filter out patterns that already exist (excluding comments and empty lines)
+        new_patterns_to_add = []
+        for pattern in patterns:
+            if pattern.strip() == "" or pattern.startswith("#"):
+                # Always add comments and empty lines for structure
+                new_patterns_to_add.append(pattern)
+            elif pattern.strip() not in existing_patterns:
+                # Only add if pattern doesn't exist
+                new_patterns_to_add.append(pattern)
+        
+        # Count actual new patterns (excluding comments and empty lines)
+        actual_new_patterns = [p for p in new_patterns_to_add 
+                             if p.strip() and not p.startswith('#')]
+        
+        if not actual_new_patterns and gitignore_path.exists():
+            click.echo("✅ .gitignore already contains all standard patterns")
+            return
+        
+        # Prepare the content to write
+        content_to_write = []
+        
+        if gitignore_path.exists() and existing_content.strip():
+            # Add existing content first
+            content_to_write.append(existing_content.rstrip())
+            # Add separators
+            content_to_write.extend(["", "", "# Added by apilib"])
+        
+        # Add new patterns
+        content_to_write.extend(new_patterns_to_add)
+        
+        # Write the updated content
+        with open(gitignore_path, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(content_to_write))
+        
+        # Count added patterns (excluding comments and empty lines)
+        added_count = len(actual_new_patterns)
+        
+        if gitignore_path.exists() and existing_content:
+            click.echo(f"✅ Added {added_count} new patterns to existing .gitignore")
+        else:
+            click.echo(f"✅ Created .gitignore with {added_count} patterns")
+            
+        click.echo(f"📍 Location: {gitignore_path}")
+        
+        if added_count > 0:
+            click.echo("\n📋 Added patterns include:")
+            click.echo("   • Python cache files (__pycache__, *.pyc)")
+            click.echo("   • Build directories (build/, dist/, *.egg-info/)")
+            click.echo("   • Virtual environments (.venv, venv/, env/)")
+            click.echo("   • IDE files (.vscode/, .idea/)")
+            click.echo("   • OS files (.DS_Store, Thumbs.db)")
+            click.echo("   • Environment files (.env)")
+            click.echo("   • And many more development-related patterns")
+        
+    except PermissionError:
+        click.echo("❌ Permission denied. Please check file permissions or run as administrator.")
+    except Exception as e:
+        click.echo(f"❌ Error creating/updating .gitignore: {e}")
+
 def hiiapi_command():
     """Entry point for hiiapi command - shows all commands and sets up password."""
     from .auth import PasswordManager
@@ -320,6 +522,7 @@ def hiiapi_command():
         ("deletekey", "Delete specific API keys"),
         ("fetchallkeys", "Display all stored API keys"),
         ("deleteallkeys", "Delete all stored API keys"),
+        ("addgitignore", "Add common .gitignore patterns"),
         ("checkauth", "Check password authentication status"),
         ("hiiapi", "Show commands and setup password")
     ]
