@@ -1,6 +1,6 @@
 """API Library - Secure API Key Storage and Retrieval"""
 
-__version__ = "1.3.2"
+__version__ = "1.3.8"
 __author__ = "Lokesh"
 __email__ = "lokeshpantangi@gmail.com"
 

@@ -1,5 +1,4 @@
 include README.md
-include requirements.txt
 include LICENSE
 recursive-include apilib *.py
 global-exclude *.pyc

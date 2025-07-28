@@ -46,15 +46,19 @@ class PasswordManager:
             raise Exception(f"Failed to save configuration: {e}")
     
     def _hash_password(self, password: str) -> str:
-        """Hash a password using SHA-256.
+        """Hash a password using SHA-256 with salt.
         
         Args:
             password (str): Plain text password
             
         Returns:
-            str: Hashed password
+            str: Salted and hashed password
         """
-        return hashlib.sha256(password.encode()).hexdigest()
+        # Use a deterministic salt based on username for consistency
+        import getpass
+        salt = f"apilib_{getpass.getuser()}_salt_2024"
+        salted_password = salt + password + salt
+        return hashlib.sha256(salted_password.encode()).hexdigest()
     
     def is_first_time_user(self) -> bool:
         """Check if this is the first time the user is using the library.

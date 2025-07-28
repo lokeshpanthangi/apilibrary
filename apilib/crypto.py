@@ -27,8 +27,10 @@ class KeyEncryption:
     def _get_fernet(self) -> Fernet:
         """Get or create Fernet instance."""
         if self._fernet is None:
-            # Generate a salt (should be stored, but for simplicity using fixed)
-            salt = b'apilib_salt_2024'
+            # Use a deterministic salt based on password for consistency
+            # This ensures the same password always generates the same key
+            import hashlib
+            salt = hashlib.sha256(self.password + b'apilib_2024').digest()[:16]
             kdf = PBKDF2HMAC(
                 algorithm=hashes.SHA256(),
                 length=32,

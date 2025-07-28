@@ -9,7 +9,7 @@ def setup_password_command():
     password_manager = PasswordManager()
     
     if not password_manager.is_first_time_user():
-        click.echo("Nah Nope password already Exists")
+        click.echo("❌ Password already exists. Use 'checkauth' to verify status.")
         sys.exit(1)
     
     success, message = password_manager.setup_password()
@@ -25,7 +25,7 @@ def check_auth_status_command():
     password_manager = PasswordManager()
     
     if password_manager.is_first_time_user():
-        click.echo("Setup a password first dude use command 'setuppassword'")
+        click.echo("❌ No password set up. Use 'hiiapi' to set up your password first.")
     else:
-        click.echo("Naish password is set")
-        click.echo("Rememebr the pass you cant change it again once gone 'BOOM' all gone.")
+        click.echo("✅ Password is configured and ready to use.")
+        click.echo("⚠️  Remember your password - it cannot be changed once set.")

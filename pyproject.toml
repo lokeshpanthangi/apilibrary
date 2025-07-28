@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "apilibrary"
-version = "1.3.2"
+version = "1.3.8"
 description = "A simple library to securely store and retrieve API keys"
 authors = [{name = "Lokesh", email = "lokeshpantangi@gmail.com"}]
 readme = "README.md"
@@ -33,7 +33,8 @@ storekey = "apilib.commands:store_key_command"
 fetchkey = "apilib.commands:fetch_key_command"
 deletekey = "apilib.commands:delete_key_command"
 fetchallkeys = "apilib.commands:fetch_all_keys_command"
-setuppassword = "apilib.password_commands:setup_password_command"
+deleteallkeys = "apilib.commands:delete_all_keys_command"
+hiiapi = "apilib.commands:hiiapi_command"
 checkauth = "apilib.password_commands:check_auth_status_command"
 
 [project.urls]

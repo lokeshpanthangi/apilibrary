@@ -239,3 +239,18 @@ class KeyStorage:
         except Exception as e:
             print(f"Error deleting provider keys: {e}")
             return False
+    
+    def delete_all_keys(self) -> bool:
+        """Delete all stored API keys for all providers.
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Clear all data by saving an empty dictionary
+            self._save_data({})
+            return True
+            
+        except Exception as e:
+            print(f"Error deleting all keys: {e}")
+            return False

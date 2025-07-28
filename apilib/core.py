@@ -144,3 +144,34 @@ class APIKeyManager:
         # But we could add authentication here if needed for extra security
         providers = self.storage.list_providers()
         return [p.title() for p in providers]
+    
+    def delete_all_keys(self) -> Tuple[bool, str]:
+        """Delete all API keys for all providers with password authentication.
+        
+        Returns:
+            Tuple[bool, str]: (Success status, Message)
+        """
+        # Authenticate user first
+        password = self.password_manager.get_password_for_encryption()
+        if password is None:
+            return False, "Authentication failed. Cannot delete keys."
+        
+        # Create new storage instance with authenticated password
+        authenticated_storage = KeyStorage(password)
+        
+        # Check if there are any keys to delete
+        all_keys = authenticated_storage.get_all_keys()
+        if not all_keys:
+            return False, "No API keys found to delete."
+        
+        # Count total keys before deletion
+        total_keys = sum(len(keys) for keys in all_keys.values())
+        total_providers = len(all_keys)
+        
+        # Delete all keys
+        success = authenticated_storage.delete_all_keys()
+        
+        if success:
+            return True, f"Successfully deleted {total_keys} key(s) from {total_providers} provider(s)"
+        else:
+            return False, "Failed to delete all keys"
