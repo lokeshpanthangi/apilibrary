@@ -26,6 +26,7 @@ classifiers = [
 dependencies = [
     "cryptography>=3.4.8",
     "click>=8.0.0",
+    "pywin32; platform_system == 'Windows'"
 ]
 
 [project.scripts]

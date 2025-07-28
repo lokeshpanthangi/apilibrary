@@ -6,6 +6,28 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from .crypto import KeyEncryption
 from .auth import PasswordManager
+import platform
+
+def restrict_file_to_user(filepath):
+    if os.name == 'nt':  # Windows
+        try:
+            import win32security
+            import ntsecuritycon as con
+            user, domain, type = win32security.LookupAccountName("", os.getlogin())
+            sd = win32security.GetFileSecurity(filepath, win32security.DACL_SECURITY_INFORMATION)
+            dacl = win32security.ACL()
+            dacl.AddAccessAllowedAce(win32security.ACL_REVISION, con.FILE_GENERIC_READ | con.FILE_GENERIC_WRITE, user)
+            sd.SetSecurityDescriptorDacl(1, dacl, 0)
+            win32security.SetFileSecurity(filepath, win32security.DACL_SECURITY_INFORMATION, sd)
+        except ImportError:
+            print("[WARNING] pywin32 is not installed. File permissions may not be secure on Windows.")
+        except Exception as e:
+            print(f"[WARNING] Could not set secure permissions on {filepath}: {e}")
+    else:
+        try:
+            os.chmod(filepath, 0o600)
+        except Exception as e:
+            print(f"[WARNING] Could not set secure permissions on {filepath}: {e}")
 
 class KeyStorage:
     """Handle storage and retrieval of encrypted API keys."""
@@ -80,6 +102,9 @@ class KeyStorage:
             
             # Atomic move from temp to actual file
             shutil.move(str(temp_file), str(self.storage_file))
+            
+            # Set secure permissions
+            restrict_file_to_user(self.storage_file)
             
         except PermissionError as e:
             # Clean up temp file if it exists
