@@ -154,7 +154,7 @@ def fetch_key_command():
         
         # Check current working directory for .env file
         env_file_path = os.path.join(os.getcwd(), ".env")
-        env_var_name = f"{provider.upper()}_API_KEY"
+        env_var_name = {provider.upper()}
         env_line = f"{env_var_name} = {selected_key}\n"
         
         try:

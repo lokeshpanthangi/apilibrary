@@ -6,6 +6,8 @@ import hashlib
 import getpass
 from pathlib import Path
 from typing import Optional, Tuple
+import argon2
+import argon2.exceptions as argon2_exceptions
 
 class PasswordManager:
     """Handle user password authentication and management."""
@@ -46,19 +48,9 @@ class PasswordManager:
             raise Exception(f"Failed to save configuration: {e}")
     
     def _hash_password(self, password: str) -> str:
-        """Hash a password using SHA-256 with salt.
-        
-        Args:
-            password (str): Plain text password
-            
-        Returns:
-            str: Salted and hashed password
-        """
-        # Use a deterministic salt based on username for consistency
-        import getpass
-        salt = f"apilib_{getpass.getuser()}_salt_2024"
-        salted_password = salt + password + salt
-        return hashlib.sha256(salted_password.encode()).hexdigest()
+        """Hash a password using Argon2 with a random salt."""
+        ph = argon2.PasswordHasher()
+        return ph.hash(password)
     
     def is_first_time_user(self) -> bool:
         """Check if this is the first time the user is using the library.
@@ -108,31 +100,19 @@ class PasswordManager:
             except Exception as e:
                 return False, f"Failed to save password: {e}"
     
-    def authenticate(self, password: Optional[str] = None) -> Tuple[bool, str]:
-        """Authenticate user with password.
-        
-        Args:
-            password (str, optional): Password to authenticate. If None, prompts user.
-            
-        Returns:
-            Tuple[bool, str]: (Success status, Message)
-        """
-        if self.is_first_time_user():
-            return self.setup_password()
-        
+    def authenticate(self, password: str) -> bool:
+        """Authenticate the user by verifying the password with Argon2."""
         config = self._load_config()
-        stored_hash = config.get('password_hash')
-        
-        if not stored_hash:
-            return False, "No password found. Please run setup first."
-        
-        if password is None:
-            password = getpass.getpass("Enter your master password: ")
-        
-        if self._hash_password(password) == stored_hash:
-            return True, "Authentication successful"
-        else:
-            return False, "Incorrect password"
+        password_hash = config.get('password_hash')
+        if not password_hash:
+            return False
+        ph = argon2.PasswordHasher()
+        try:
+            return ph.verify(password_hash, password)
+        except argon2_exceptions.VerifyMismatchError:
+            return False
+        except Exception:
+            return False
     
     def get_password_for_encryption(self) -> Optional[str]:
         """Get the user's password for encryption purposes.
@@ -146,7 +126,7 @@ class PasswordManager:
                 return None
         
         password = getpass.getpass("Enter your master password: ")
-        success, _ = self.authenticate(password)
+        success = self.authenticate(password)
         
         if success:
             return password
