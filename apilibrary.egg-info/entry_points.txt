@@ -1,5 +1,7 @@
 [console_scripts]
+checkauth = apilib.password_commands:check_auth_status_command
 deletekey = apilib.commands:delete_key_command
 fetchallkeys = apilib.commands:fetch_all_keys_command
 fetchkey = apilib.commands:fetch_key_command
+setuppassword = apilib.password_commands:setup_password_command
 storekey = apilib.commands:store_key_command

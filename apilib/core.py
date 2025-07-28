@@ -2,13 +2,19 @@
 
 from typing import Dict, List, Tuple
 from .storage import KeyStorage
+from .auth import PasswordManager
 
 class APIKeyManager:
     """Main class for managing API keys."""
     
-    def __init__(self):
-        """Initialize the API Key Manager."""
-        self.storage = KeyStorage()
+    def __init__(self, password: str = None):
+        """Initialize the API Key Manager.
+        
+        Args:
+            password (str, optional): User password for encryption. If None, uses system-based encryption.
+        """
+        self.password_manager = PasswordManager()
+        self.storage = KeyStorage(password)
     
     def store_key(self, api_key: str, provider: str) -> Tuple[bool, str]:
         """Store an API key for a specified provider.
@@ -32,7 +38,7 @@ class APIKeyManager:
             return False, "API key already exists or failed to store"
     
     def fetch_keys(self, provider: str) -> Tuple[bool, List[str], str]:
-        """Fetch all API keys for a provider.
+        """Fetch all API keys for a provider with password authentication.
         
         Args:
             provider (str): The provider name (case-insensitive)
@@ -40,14 +46,22 @@ class APIKeyManager:
         Returns:
             Tuple[bool, List[str], str]: (Success status, Keys list, Message)
         """
+        # Authenticate user first
+        password = self.password_manager.get_password_for_encryption()
+        if password is None:
+            return False, [], "Authentication failed. Cannot fetch keys."
+        
+        # Create new storage instance with authenticated password
+        authenticated_storage = KeyStorage(password)
+        
         # Normalize provider name
         provider = provider.lower().strip()
         
         # Get keys
-        keys = self.storage.get_keys(provider)
+        keys = authenticated_storage.get_keys(provider)
         
         if not keys:
-            available_providers = self.storage.list_providers()
+            available_providers = authenticated_storage.list_providers()
             if available_providers:
                 providers_list = ", ".join([p.title() for p in available_providers])
                 message = f"No keys found for '{provider}'. Available providers: {providers_list}"
@@ -58,7 +72,7 @@ class APIKeyManager:
         return True, keys, f"Found {len(keys)} key(s) for {provider.title()}"
     
     def delete_key(self, provider: str, key_index: int) -> Tuple[bool, str]:
-        """Delete a specific API key by index.
+        """Delete a specific API key by index with password authentication.
         
         Args:
             provider (str): The provider name
@@ -67,6 +81,14 @@ class APIKeyManager:
         Returns:
             Tuple[bool, str]: (Success status, Message)
         """
+        # Authenticate user first
+        password = self.password_manager.get_password_for_encryption()
+        if password is None:
+            return False, "Authentication failed. Cannot delete keys."
+        
+        # Create new storage instance with authenticated password
+        authenticated_storage = KeyStorage(password)
+        
         # Normalize provider name
         provider = provider.lower().strip()
         
@@ -75,7 +97,7 @@ class APIKeyManager:
             return False, "Key index must be 1 or greater"
         
         # Check if provider exists and has keys
-        keys = self.storage.get_keys(provider)
+        keys = authenticated_storage.get_keys(provider)
         if not keys:
             return False, f"No keys found for '{provider}'"
         
@@ -83,7 +105,7 @@ class APIKeyManager:
             return False, f"Key index {key_index} not found. {provider.title()} has only {len(keys)} key(s)"
         
         # Delete the key
-        success = self.storage.delete_key(provider, key_index)
+        success = authenticated_storage.delete_key(provider, key_index)
         
         if success:
             return True, f"Key #{key_index} successfully deleted for {provider.title()}"
@@ -91,12 +113,20 @@ class APIKeyManager:
             return False, "Failed to delete key"
     
     def fetch_all_keys(self) -> Tuple[bool, Dict[str, List[str]], str]:
-        """Fetch all API keys for all providers.
+        """Fetch all API keys for all providers with password authentication.
         
         Returns:
             Tuple[bool, Dict[str, List[str]], str]: (Success status, All keys dict, Message)
         """
-        all_keys = self.storage.get_all_keys()
+        # Authenticate user first
+        password = self.password_manager.get_password_for_encryption()
+        if password is None:
+            return False, {}, "Authentication failed. Cannot fetch keys."
+        
+        # Create new storage instance with authenticated password
+        authenticated_storage = KeyStorage(password)
+        
+        all_keys = authenticated_storage.get_all_keys()
         
         if not all_keys:
             return False, {}, "No API keys stored yet. Use 'storekey' to add some keys first."
@@ -105,10 +135,12 @@ class APIKeyManager:
         return True, all_keys, f"Found {total_keys} key(s) across {len(all_keys)} provider(s)"
     
     def list_all_providers(self) -> List[str]:
-        """Get list of all providers with stored keys.
+        """Get list of all providers with stored keys (requires authentication).
         
         Returns:
             List[str]: List of provider names
         """
+        # For listing providers, we don't require authentication as it's just metadata
+        # But we could add authentication here if needed for extra security
         providers = self.storage.list_providers()
         return [p.title() for p in providers]

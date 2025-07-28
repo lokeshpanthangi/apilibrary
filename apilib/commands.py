@@ -8,7 +8,6 @@ def store_key_command():
     """Entry point for storekey command."""
     if len(sys.argv) < 3:
         click.echo("Usage: storekey <provider_name> <api_key>")
-        click.echo("Example: storekey openai \"sk-1234567890abcdef\"")
         sys.exit(1)
     
     provider = sys.argv[1]
@@ -79,12 +78,12 @@ def delete_key_command():
     try:
         key_index = int(sys.argv[2])
     except ValueError:
-        click.echo("Error: Key index must be a number")
+        click.echo("Error: Bigman use the numbers not the letters")
         click.echo("Example: deletekey openai 1")
         sys.exit(1)
     
     if not provider or provider.strip() == "":
-        click.echo("Error: Provider name cannot be empty")
+        click.echo("Error: companyname cant be empty. Do this again i'll delete your OS")
         sys.exit(1)
     
     manager = APIKeyManager()

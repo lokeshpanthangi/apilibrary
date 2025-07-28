@@ -5,15 +5,23 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional
 from .crypto import KeyEncryption
+from .auth import PasswordManager
 
 class KeyStorage:
     """Handle storage and retrieval of encrypted API keys."""
     
-    def __init__(self):
-        """Initialize storage with default location."""
+    def __init__(self, password: str = None):
+        """Initialize storage with default location.
+        
+        Args:
+            password (str, optional): User password for encryption. If None, uses system-based encryption.
+        """
         self.storage_dir = Path.home() / '.apilib'
         self.storage_file = self.storage_dir / 'keys.json'
-        self.encryption = KeyEncryption()
+        self.password_manager = PasswordManager()
+        
+        # Use provided password or fallback to system-based encryption
+        self.encryption = KeyEncryption(password)
         
         # Ensure storage directory exists
         self.storage_dir.mkdir(exist_ok=True)
@@ -65,11 +73,19 @@ class KeyStorage:
             # Check if key already exists (compare decrypted values)
             for existing_encrypted_key in data[provider]:
                 try:
+                    # Try current encryption first
                     existing_key = self.encryption.decrypt(existing_encrypted_key)
                     if existing_key == api_key:
                         return False  # Key already exists
                 except:
-                    continue  # Skip corrupted entries
+                    # If current encryption fails, try system-based encryption for backward compatibility
+                    try:
+                        system_encryption = KeyEncryption(None)  # This will use system-based key
+                        existing_key = system_encryption.decrypt(existing_encrypted_key)
+                        if existing_key == api_key:
+                            return False  # Key already exists
+                    except:
+                        continue  # Skip corrupted entries
             
             # Add the new encrypted key
             data[provider].append(encrypted_key)
@@ -100,10 +116,17 @@ class KeyStorage:
             decrypted_keys = []
             for encrypted_key in data[provider]:
                 try:
+                    # Try current encryption first
                     decrypted_key = self.encryption.decrypt(encrypted_key)
                     decrypted_keys.append(decrypted_key)
                 except:
-                    continue  # Skip corrupted entries
+                    # If current encryption fails, try system-based encryption for backward compatibility
+                    try:
+                        system_encryption = KeyEncryption(None)  # This will use system-based key
+                        decrypted_key = system_encryption.decrypt(encrypted_key)
+                        decrypted_keys.append(decrypted_key)
+                    except:
+                        continue  # Skip corrupted entries
             
             return decrypted_keys
             
@@ -173,10 +196,17 @@ class KeyStorage:
                 decrypted_keys = []
                 for encrypted_key in encrypted_keys:
                     try:
+                        # Try current encryption first
                         decrypted_key = self.encryption.decrypt(encrypted_key)
                         decrypted_keys.append(decrypted_key)
                     except:
-                        continue  # Skip corrupted entries
+                        # If current encryption fails, try system-based encryption for backward compatibility
+                        try:
+                            system_encryption = KeyEncryption(None)  # This will use system-based key
+                            decrypted_key = system_encryption.decrypt(encrypted_key)
+                            decrypted_keys.append(decrypted_key)
+                        except:
+                            continue  # Skip corrupted entries
                 
                 if decrypted_keys:  # Only include providers with valid keys
                     all_keys[provider] = decrypted_keys

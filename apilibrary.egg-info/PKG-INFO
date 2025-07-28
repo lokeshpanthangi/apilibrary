@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: apilibrary
-Version: 1.2.0
+Version: 1.3.2
 Summary: A simple library to securely store and retrieve API keys
 Author-email: Lokesh <lokeshpantangi@gmail.com>
 Project-URL: Homepage, https://github.com/lokeshpantangi/apilibrary
@@ -32,10 +32,12 @@ A simple and secure Python library for storing and retrieving API keys with auto
 ## Features
 
 - 🔐 **Secure Storage**: API keys are encrypted before storage
+- 🔑 **Password Protection**: Master password required for fetching/deleting keys
 - 🤖 **Auto-Detection**: Automatically detects API provider from key format
 - 🚀 **Direct Commands**: Use `storekey` and `fetchkey` commands directly
 - 🔒 **Local Storage**: Keys stored locally in encrypted format
 - 🌐 **Multi-Provider**: Supports OpenAI, Claude, Google AI, Hugging Face, and more
+- 🛡️ **First-time Setup**: Mandatory password creation on first use
 
 ## Installation
 
@@ -53,6 +55,20 @@ pip install .
 
 ## Usage
 
+### First-Time Setup
+
+On your first use, you'll be prompted to create a master password:
+
+```bash
+fetchkey openai  # Will trigger password setup if first time
+```
+
+Or manually set up the password:
+
+```bash
+setuppassword
+```
+
 ### Store an API Key
 
 ```bash
@@ -61,7 +77,7 @@ storekey claude "sk-ant-api03-1234567890abcdef..."
 storekey google "AIza1234567890abcdef..."
 ```
 
-Specify the provider name and the API key. The library will store the key securely with the specified provider.
+Specify the provider name and the API key. The library will store the key securely with the specified provider. **No password required for storing.**
 
 ### Retrieve API Keys
 
@@ -69,7 +85,17 @@ Specify the provider name and the API key. The library will store the key secure
 fetchkey openai
 ```
 
-This will display all stored API keys for the specified provider (keys are masked for security).
+This will prompt for your master password and then display all stored API keys for the specified provider. **Password required for fetching.**
+
+### Password Management
+
+```bash
+# Check authentication status
+checkauth
+
+# Change your master password
+changepassword
+```
 
 ### Supported Providers
 

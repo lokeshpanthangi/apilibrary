@@ -13,10 +13,10 @@ class KeyEncryption:
         """Initialize encryption with a password.
         
         Args:
-            password (str, optional): Custom password. If None, uses system-based key.
+            password (str, optional): User password for encryption. If None, uses system-based key for backward compatibility.
         """
         if password is None:
-            # Use a combination of username and machine info as password
+            # Fallback to system-based key for backward compatibility
             import getpass
             import platform
             password = f"{getpass.getuser()}_{platform.node()}_apilib"
