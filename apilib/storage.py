@@ -23,8 +23,18 @@ class KeyStorage:
         # Use provided password or fallback to system-based encryption
         self.encryption = KeyEncryption(password)
         
-        # Ensure storage directory exists
-        self.storage_dir.mkdir(exist_ok=True)
+        # Ensure storage directory exists with proper permissions
+        try:
+            self.storage_dir.mkdir(exist_ok=True)
+            # Ensure directory is writable
+            import stat
+            if self.storage_dir.exists():
+                current_mode = self.storage_dir.stat().st_mode
+                self.storage_dir.chmod(current_mode | stat.S_IWRITE | stat.S_IREAD)
+        except PermissionError:
+            raise PermissionError(f"Cannot create or access directory {self.storage_dir}. Please check permissions or run as administrator.")
+        except Exception as e:
+            raise Exception(f"Error setting up storage directory: {e}")
     
     def _load_data(self) -> Dict:
         """Load data from storage file.
@@ -47,8 +57,46 @@ class KeyStorage:
         Args:
             data (Dict): The data to save
         """
-        with open(self.storage_file, 'w') as f:
-            json.dump(data, f, indent=2)
+        import tempfile
+        import shutil
+        
+        try:
+            # Create a temporary file first
+            temp_file = self.storage_file.with_suffix('.tmp')
+            
+            # Write to temporary file
+            with open(temp_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            
+            # If file exists and is read-only, try to make it writable
+            if self.storage_file.exists():
+                try:
+                    import stat
+                    # Remove read-only attribute if present
+                    current_mode = self.storage_file.stat().st_mode
+                    self.storage_file.chmod(current_mode | stat.S_IWRITE)
+                except (OSError, PermissionError):
+                    pass  # Continue anyway
+            
+            # Atomic move from temp to actual file
+            shutil.move(str(temp_file), str(self.storage_file))
+            
+        except PermissionError as e:
+            # Clean up temp file if it exists
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except:
+                    pass
+            raise PermissionError(f"Cannot write to {self.storage_file}. Please check file permissions or run as administrator.") from e
+        except Exception as e:
+            # Clean up temp file if it exists
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except:
+                    pass
+            raise e
     
     def store_key(self, provider: str, api_key: str) -> bool:
         """Store an encrypted API key.
@@ -94,6 +142,10 @@ class KeyStorage:
             self._save_data(data)
             return True
             
+        except PermissionError as e:
+            print(f"Permission Error: {e}")
+            print("Try running the command as administrator or check file permissions.")
+            return False
         except Exception as e:
             print(f"Error storing key: {e}")
             return False
