@@ -33,6 +33,7 @@
 ```bash
 pip install volti
 ```
+That's it , You can start using it with the following commands... \/__\/
 
 ## 🚀 Quick Start
 
