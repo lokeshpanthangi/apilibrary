@@ -12,7 +12,7 @@ Author: Lokesh & Aditya
 Version: 1.0.0
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Lokesh & Aditya"
 __email__ = "lokeshpantangi@gmail.com, aditya268244@gmail.com"
 
