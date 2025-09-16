@@ -1,22 +1,21 @@
-MIT License
+Compact Attribution License (2025)
 
-Copyright (c) 2025 Lokesh & Aditya
+Copyright (c) 2025 Venkata Lokesh & Aditya Sebastian
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is granted to use, copy, modify, and distribute this software and
+its documentation, provided that the following conditions are met:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Attribution: Redistributions in any form must retain the above copyright
+	notice and this attribution in a conspicuous place.
+2. Non-commercial Redistribution: This software may not be sold or redistributed
+	for commercial advantage without prior written permission from the copyright
+	holders.
+3. No Sublicensing: You may not sublicense this software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-Use however You want just mention that you used this library in your project or for anything else or else all the Content mentioned above will be considered invalid and You will be responsible for any kind of loss or damage caused by using this library.
+IMPLIED. THE AUTHORS SHALL NOT BE LIABLE FOR ANY CLAIMS OR DAMAGES ARISING
+FROM THE USE OF THIS SOFTWARE.
+
+If you need a different arrangement (commercial redistribution rights,
+or removal of the non-commercial restriction), contact the copyright holders
+to request alternative licensing terms.

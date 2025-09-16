@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "apilibrary"
-version = "1.4.2"
+version = "1.0.0"
 description = "A simple library to securely store and retrieve API keys"
-authors = [{name = "Lokesh", email = "lokeshpantangi@gmail.com"}]
+authors = [{name = "Lokesh", email = "lokeshpantangi@gmail.com"}, {name = "Aditya", email = "aditya268244@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.6"
 classifiers = [
@@ -26,18 +26,23 @@ classifiers = [
 dependencies = [
     "cryptography>=3.4.8",
     "click>=8.0.0",
-    "pywin32; platform_system == 'Windows'"
+    "pywin32; platform_system == 'Windows'",
+    "argon2-cffi",
+    "pyperclip"
 ]
 
 [project.scripts]
-storekey = "apilib.commands:store_key_command"
-fetchkey = "apilib.commands:fetch_key_command"
-deletekey = "apilib.commands:delete_key_command"
-fetchallkeys = "apilib.commands:fetch_all_keys_command"
-deleteallkeys = "apilib.commands:delete_all_keys_command"
-addgitignore = "apilib.commands:addgitignore_command"
-hiiapi = "apilib.commands:hiiapi_command"
-checkauth = "apilib.password_commands:check_auth_status_command"
+volti = "apilib.commands:main"
+# Minimal CLI commands
+add = "apilib.commands:add_command"
+get = "apilib.commands:get_command"
+remove = "apilib.commands:remove_command"
+list = "apilib.commands:list_command"
+clear = "apilib.commands:clear_command"
+setup = "apilib.commands:setup_command"
+auth = "apilib.password_commands:check_auth_status_command"
+gitignore = "apilib.commands:gitignore_command"
+help = "apilib.commands:help_command"
 
 [project.urls]
 Homepage = "https://github.com/lokeshpantangi/apilibrary"

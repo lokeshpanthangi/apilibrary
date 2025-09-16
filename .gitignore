@@ -1,0 +1,22 @@
+__pycache__/
+apilibrary.egg-info/
+build/
+dist/
+
+# Packaging artifacts
+*.egg-info/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+

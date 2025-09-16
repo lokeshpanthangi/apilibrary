@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 from .crypto import KeyEncryption
 from .auth import PasswordManager
 import platform
+from pathlib import Path
 
 def restrict_file_to_user(filepath):
     if os.name == 'nt':  # Windows
@@ -14,11 +15,11 @@ def restrict_file_to_user(filepath):
             import win32security
             import ntsecuritycon as con
             user, domain, type = win32security.LookupAccountName("", os.getlogin())
-            sd = win32security.GetFileSecurity(filepath, win32security.DACL_SECURITY_INFORMATION)
+            sd = win32security.GetFileSecurity(str(filepath), win32security.DACL_SECURITY_INFORMATION)
             dacl = win32security.ACL()
             dacl.AddAccessAllowedAce(win32security.ACL_REVISION, con.FILE_GENERIC_READ | con.FILE_GENERIC_WRITE, user)
             sd.SetSecurityDescriptorDacl(1, dacl, 0)
-            win32security.SetFileSecurity(filepath, win32security.DACL_SECURITY_INFORMATION, sd)
+            win32security.SetFileSecurity(str(filepath), win32security.DACL_SECURITY_INFORMATION, sd)
         except ImportError:
             print("[WARNING] pywin32 is not installed. File permissions may not be secure on Windows.")
         except Exception as e:
@@ -123,142 +124,103 @@ class KeyStorage:
                     pass
             raise e
     
-    def store_key(self, provider: str, api_key: str) -> bool:
-        """Store an encrypted API key.
+    def store_key(self, provider, api_key, password=None, expiration_days=7):
+        data = self._load_data()
+        normalized_provider = provider.lower()
+        actual_provider = normalized_provider
+        if actual_provider not in data:
+            data[actual_provider] = []
         
-        Args:
-            provider (str): The API provider name
-            api_key (str): The API key to store
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        try:
-            data = self._load_data()
-            
-            # Initialize provider list if it doesn't exist
-            if provider not in data:
-                data[provider] = []
-            
-            # Encrypt the API key
-            encrypted_key = self.encryption.encrypt(api_key)
-            
-            # Check if key already exists (compare decrypted values)
-            for existing_encrypted_key in data[provider]:
+        # Encrypt the API key
+        encrypted_key = self.encryption.encrypt(api_key)
+        
+        # Check if key already exists (compare decrypted values)
+        for existing_encrypted_key in data[actual_provider]:
+            try:
+                # Try current encryption first
+                existing_result = self.encryption.decrypt(existing_encrypted_key)
+                existing_key = existing_result[0] if isinstance(existing_result, tuple) else existing_result
+                if existing_key == api_key:
+                    return False  # Key already exists
+            except:
+                # If current encryption fails, try system-based encryption for backward compatibility
                 try:
-                    # Try current encryption first
-                    existing_key = self.encryption.decrypt(existing_encrypted_key)
+                    system_encryption = KeyEncryption(None)  # This will use system-based key
+                    existing_result = system_encryption.decrypt(existing_encrypted_key)
+                    existing_key = existing_result[0] if isinstance(existing_result, tuple) else existing_result
                     if existing_key == api_key:
                         return False  # Key already exists
                 except:
-                    # If current encryption fails, try system-based encryption for backward compatibility
-                    try:
-                        system_encryption = KeyEncryption(None)  # This will use system-based key
-                        existing_key = system_encryption.decrypt(existing_encrypted_key)
-                        if existing_key == api_key:
-                            return False  # Key already exists
-                    except:
-                        continue  # Skip corrupted entries
-            
-            # Add the new encrypted key
-            data[provider].append(encrypted_key)
-            
-            # Save the updated data
-            self._save_data(data)
-            return True
-            
-        except PermissionError as e:
-            print(f"Permission Error: {e}")
-            print("Try running the command as administrator or check file permissions.")
-            return False
-        except Exception as e:
-            print(f"Error storing key: {e}")
-            return False
-    
-    def get_keys(self, provider: str) -> List[str]:
-        """Retrieve all API keys for a provider.
+                    continue  # Skip corrupted entries
         
-        Args:
-            provider (str): The API provider name
-            
-        Returns:
-            List[str]: List of decrypted API keys
-        """
-        try:
-            data = self._load_data()
-            
-            if provider not in data:
-                return []
-            
-            decrypted_keys = []
-            for encrypted_key in data[provider]:
+        # Add the new encrypted key
+        data[actual_provider].append(encrypted_key)
+        
+        # Save the updated data
+        self._save_data(data)
+        return True
+
+    def get_keys(self, provider, password=None):
+        data = self._load_data()
+        normalized_provider = provider.lower()
+        actual_provider = normalized_provider
+        if actual_provider not in data:
+            print(f"No keys found for '{provider}'. Did you mean: {', '.join(data.keys())}?")
+            return []
+        decrypted_keys = []
+        for encrypted_key in data[actual_provider]:
+            try:
+                # Try current encryption first
+                decrypted_result = self.encryption.decrypt(encrypted_key)
+                decrypted_key = decrypted_result[0] if isinstance(decrypted_result, tuple) else decrypted_result
+                decrypted_keys.append(decrypted_key)
+            except:
+                # If current encryption fails, try system-based encryption for backward compatibility
                 try:
-                    # Try current encryption first
-                    decrypted_key = self.encryption.decrypt(encrypted_key)
+                    system_encryption = KeyEncryption(None)  # This will use system-based key
+                    decrypted_result = system_encryption.decrypt(encrypted_key)
+                    decrypted_key = decrypted_result[0] if isinstance(decrypted_result, tuple) else decrypted_result
                     decrypted_keys.append(decrypted_key)
                 except:
-                    # If current encryption fails, try system-based encryption for backward compatibility
-                    try:
-                        system_encryption = KeyEncryption(None)  # This will use system-based key
-                        decrypted_key = system_encryption.decrypt(encrypted_key)
-                        decrypted_keys.append(decrypted_key)
-                    except:
-                        continue  # Skip corrupted entries
-            
-            return decrypted_keys
-            
-        except Exception as e:
-            print(f"Error retrieving keys: {e}")
-            return []
+                    continue  # Skip corrupted entries
+        return decrypted_keys
     
-    def list_providers(self) -> List[str]:
-        """Get list of all providers with stored keys.
-        
-        Returns:
-            List[str]: List of provider names
-        """
-        try:
-            data = self._load_data()
-            return [provider for provider, keys in data.items() if keys]
-        except:
-            return []
+    def list_providers(self):
+        data = self._load_data()
+        return list(data.keys())
     
-    def delete_key(self, provider: str, key_index: int) -> bool:
-        """Delete a specific API key by index.
-        
-        Args:
-            provider (str): The API provider name
-            key_index (int): The index of the key to delete (1-based)
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        try:
-            data = self._load_data()
-            
-            if provider not in data or not data[provider]:
+    def delete_key(self, provider, index):
+        """Delete a specific key by 1-based index for a provider."""
+        data = self._load_data()
+        normalized_provider = provider.lower()
+        actual_provider = normalized_provider
+        if actual_provider in data:
+            try:
+                # index is 1-based from CLI
+                idx = int(index)
+                if idx < 1 or idx > len(data[actual_provider]):
+                    return False
+                data[actual_provider].pop(idx - 1)
+            except (ValueError, IndexError):
                 return False
-            
-            # Convert to 0-based index
-            index = key_index - 1
-            
-            if index < 0 or index >= len(data[provider]):
-                return False
-            
-            # Remove the key at the specified index
-            data[provider].pop(index)
-            
+
             # Remove provider if no keys left
-            if not data[provider]:
-                del data[provider]
-            
+            if not data.get(actual_provider):
+                try:
+                    del data[actual_provider]
+                except KeyError:
+                    pass
+
             self._save_data(data)
+            # Audit log: record deletion event (no secrets)
+            try:
+                pm = PasswordManager()
+                pm._log_event("DELETE_KEY", f"Deleted key #{idx} for provider '{actual_provider}'")
+            except Exception:
+                pass
             return True
-            
-        except Exception as e:
-            print(f"Error deleting key: {e}")
-            return False
-    
+        return False
+        
     def get_all_keys(self) -> Dict[str, List[str]]:
         """Retrieve all API keys for all providers.
         
@@ -274,13 +236,17 @@ class KeyStorage:
                 for encrypted_key in encrypted_keys:
                     try:
                         # Try current encryption first
-                        decrypted_key = self.encryption.decrypt(encrypted_key)
+                        decrypted_result = self.encryption.decrypt(encrypted_key)
+                        # decrypt returns (decrypted_string, needs_rotation)
+                        decrypted_key = decrypted_result[0] if isinstance(decrypted_result, tuple) else decrypted_result
                         decrypted_keys.append(decrypted_key)
                     except:
                         # If current encryption fails, try system-based encryption for backward compatibility
                         try:
                             system_encryption = KeyEncryption(None)  # This will use system-based key
-                            decrypted_key = system_encryption.decrypt(encrypted_key)
+                            decrypted_result = system_encryption.decrypt(encrypted_key)
+                            # decrypt returns (decrypted_string, needs_rotation)
+                            decrypted_key = decrypted_result[0] if isinstance(decrypted_result, tuple) else decrypted_result
                             decrypted_keys.append(decrypted_key)
                         except:
                             continue  # Skip corrupted entries
@@ -294,29 +260,26 @@ class KeyStorage:
             print(f"Error retrieving all keys: {e}")
             return {}
     
-    def delete_provider_keys(self, provider: str) -> bool:
-        """Delete all keys for a provider.
+    def delete_provider_keys(self, provider):
+        data = self._load_data()
+        normalized_provider = provider.lower()
+        actual_provider = normalized_provider
+        if actual_provider in data:
+            del data[actual_provider]
+            self._save_data(data)
+            # Audit log: deleted all keys for provider
+            try:
+                pm = PasswordManager()
+                pm._log_event("DELETE_ALL_PROVIDER", f"Deleted all keys for provider '{actual_provider}'")
+            except Exception:
+                pass
+            return True
+        return False
+
+    def delete_all_for_provider(self, provider) -> bool:
+        """Delete all keys for a specific provider (alias for delete_provider_keys)."""
+        return self.delete_provider_keys(provider)
         
-        Args:
-            provider (str): The API provider name
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        try:
-            data = self._load_data()
-            
-            if provider in data:
-                del data[provider]
-                self._save_data(data)
-                return True
-            
-            return False
-            
-        except Exception as e:
-            print(f"Error deleting provider keys: {e}")
-            return False
-    
     def delete_all_keys(self) -> bool:
         """Delete all stored API keys for all providers.
         
@@ -326,6 +289,12 @@ class KeyStorage:
         try:
             # Clear all data by saving an empty dictionary
             self._save_data({})
+            # Audit log: deleted all keys
+            try:
+                pm = PasswordManager()
+                pm._log_event("DELETE_ALL_KEYS", "Deleted ALL stored API keys")
+            except Exception:
+                pass
             return True
             
         except Exception as e:
